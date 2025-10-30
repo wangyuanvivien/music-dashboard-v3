@@ -1,5 +1,5 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 import plotly.express as px
 import numpy as np
 from collections import Counter
@@ -16,7 +16,6 @@ st.set_page_config(
 def load_data(file_path):
     """Loads the CSV data and performs initial type conversion."""
     try:
-        # Load the most enriched data file
         df = pd.read_csv(file_path)
         return df
     except FileNotFoundError:
@@ -33,11 +32,10 @@ def prepare_data(df):
     # Replace empty strings/whitespace with NaN
     df = df.replace(r'^\s*$', np.nan, regex=True)
     
-    # --- FIX IS HERE ---
     # Define all columns that need to be numeric for analysis/sorting
     numeric_cols = [
         'viewCount', 'likeCount', 'commentCount', 'popularity', 
-        'danceability', 'timbre' # <-- ADDED danceability and timbre
+        'danceability', 'timbre' 
     ]
     
     for col in numeric_cols:
@@ -45,22 +43,17 @@ def prepare_data(df):
             # Coerce all to numeric. errors='coerce' turns bad data into NaN
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
-            # Optional: We can still use Int64 for counts if we want
             if col in ['viewCount', 'likeCount', 'commentCount', 'popularity']:
                  df[col] = df[col].astype('Int64', errors='ignore')
             else:
-                 # danceability and timbre will remain floats
-                 pass
-    # --- END FIX ---
+                 pass # danceability and timbre will remain floats
             
     # Ensure release_year is Int64 (nullable integer) for filtering
     if 'release_year' in df.columns:
         df['release_year'] = pd.to_numeric(df['release_year'], errors='coerce').astype('Int64', errors='ignore')
     
-    # Check if 'consolidated_album_title' exists (it should, but we check)
+    # Safeguard: Re-integrate Album Consolidation if 'consolidated_album_title' is missing
     if 'consolidated_album_title' not in df.columns and 'album_title' in df.columns:
-        # --- RE-INTEGRATE ALBUM CONSOLIDATION (as a safeguard) ---
-        # This code is run only if the enriched column is missing, ensuring app stability.
         non_null_albums = df['album_title'].dropna().astype(str)
         all_sub_contents = []
         for title in non_null_albums.unique():
@@ -76,18 +69,16 @@ def prepare_data(df):
                 consolidated_title = original_title 
             title_mapping[original_title] = consolidated_title
         df['consolidated_album_title'] = df['album_title'].map(title_mapping)
-    # --- END SAFEGUARD ---
     
     return df
 
 # --- 3. Visualization Helper Functions (Reusable) ---
 
 def generate_pie_chart(data, column_name):
-    # Filters out NaN/NA rows for the given column before counting
     data_filtered = data.dropna(subset=[column_name])
     
     if data_filtered.empty:
-        st.warning(f"No non-empty data available for **{column_name}** to generate a pie chart.")
+        st.warning(f"No non-empty data available for **{column_name}**.")
         return
 
     value_counts = data_filtered[column_name].value_counts().reset_index()
@@ -102,14 +93,13 @@ def generate_pie_chart(data, column_name):
         hole=0.3, 
         color_discrete_sequence=px.colors.qualitative.D3
     )
-    
     st.plotly_chart(fig, use_container_width=True)
 
 def generate_top_tracks_table(data, sort_column):
     data_filtered = data.dropna(subset=[sort_column])
     
     if data_filtered.empty:
-        st.warning(f"No non-empty data available for **{sort_column}** to generate the table.")
+        st.warning(f"No non-empty data available for **{sort_column}**.")
         return
 
     display_cols = ['track_name', 'artist_credit_name', 'consolidated_album_title', 'release_year', sort_column]
@@ -121,7 +111,6 @@ def generate_top_tracks_table(data, sort_column):
         .reset_index(drop=True)
 
     st.subheader(f"🏆 Top 50 Tracks by **{sort_column}**")
-    
     st.dataframe(
         top_tracks.style.format({
             sort_column: "{:,.0f}" 
@@ -130,8 +119,7 @@ def generate_top_tracks_table(data, sort_column):
         height=750
     )
 
-# --- 4. Dashboard Page Functions (Updated for Release Year Filter) ---
-
+# --- 4. Dashboard Page Function ---
 def show_dashboard(df_filtered):
     """Displays the main visualization dashboard, now filtered by year."""
     
@@ -140,7 +128,6 @@ def show_dashboard(df_filtered):
     
     st.header("Pie Chart Analysis: Categorical Features")
     
-    # Define columns to chart
     pie_chart_cols = ['super_theme', 'genre_ros', 'timbre', 'danceability', 'combined_key']
     all_cols = df_filtered.columns.tolist()
     mood_cols = [col for col in all_cols if col.startswith('mood_')]
@@ -153,7 +140,6 @@ def show_dashboard(df_filtered):
     if 'ai_notes' in pie_chart_cols: pie_chart_cols.remove('ai_notes')
     if 'lyrics_text' in pie_chart_cols: pie_chart_cols.remove('lyrics_text')
 
-    # Display charts in 3 columns
     num_cols = 3
     cols = st.columns(num_cols)
     for i, col_name in enumerate(pie_chart_cols):
@@ -164,8 +150,6 @@ def show_dashboard(df_filtered):
             st.warning(f"Column '{col_name}' missing from the dataset.")
 
     st.markdown("---")
-
-    # TOP TRACKS TABLES SECTION
     st.header("Top 50 Tracks: Quantitative Measures")
     
     top_track_cols = ['popularity', 'viewCount', 'likeCount', 'commentCount']
@@ -181,7 +165,7 @@ def show_dashboard(df_filtered):
              st.warning(f"Column '{col_name}' missing from the dataset.")
 
 
-# --- 5. New Album Dashboard Function (Unchanged) ---
+# --- 5. New Album Dashboard Function ---
 def show_new_album_dashboard(df):
     """Displays a detailed dashboard for the '屬於' album."""
     ALBUM_NAME = "屬於"
@@ -193,24 +177,20 @@ def show_new_album_dashboard(df):
     df_album = df[df['consolidated_album_title'] == ALBUM_NAME].copy()
 
     if df_album.empty:
-        st.warning(f"Album '{ALBUM_NAME}' not found in the dataset after consolidation.")
+        st.warning(f"Album '{ALBUM_NAME}' not found in the dataset.")
         return
 
     st.title(f"🎵 New Album Analysis: **{ALBUM_NAME}**")
     st.subheader(f"Analyzing {len(df_album)} tracks from this album.")
     
-    # 1. Album Track Listing
     st.markdown("### Album Track Listing & Features")
     track_list_cols = ['track_name', 'artist_credit_name', 'popularity', 'viewCount', 'ai_sentiment', 'combined_key']
-    
     st.dataframe(
         df_album[track_list_cols].sort_values(by='popularity', ascending=False).reset_index(drop=True),
         use_container_width=True
     )
     
     st.markdown("---")
-    
-    # 2. Detailed Distribution Charts
     st.markdown("### Detailed Feature Distribution")
     
     detail_cols = ['normalized_key', 'mood_sad', 'ai_theme', 'genre_ros']
@@ -221,9 +201,9 @@ def show_new_album_dashboard(df):
             generate_pie_chart(df_album, col_name)
 
 
-# --- 6. Song Details Page Function (Unchanged) ---
+# --- 6. Song Details Page Function (***UPDATED***) ---
 def show_song_details(df):
-    """Allows selection of a song and displays its full details."""
+    """Allows selection of a song and displays its full details AND video."""
     st.title("🔍 Individual Song Details")
     
     # Create a unique name for the select box
@@ -243,10 +223,22 @@ def show_song_details(df):
         
         st.markdown("---")
         
+        # --- Main Info ---
         st.header(selected_row['track_name'])
         if 'artist_credit_name' in selected_row:
             st.subheader(f"Artist: {selected_row['artist_credit_name']}")
+
+        # --- NEW VIDEO EMBED SECTION ---
+        st.markdown("### 🎥 Video / Audio")
+        video_url = selected_row['url']
         
+        # Check if the URL is a valid string (not NaN and not empty/whitespace)
+        if pd.notna(video_url) and isinstance(video_url, str) and video_url.strip():
+            st.video(video_url)
+        else:
+            st.info("No video link is available for this track.")
+        # --- END NEW SECTION ---
+
         st.markdown("### All Feature Details")
         
         details_df = selected_row.drop('display_name', errors='ignore').reset_index()
@@ -261,7 +253,7 @@ def show_song_details(df):
             height=600
         )
 
-# --- 7. Time Series Dashboard Function (Now Safe to Run) ---
+# --- 7. Time Series Dashboard Function ---
 def show_time_series_dashboard(df):
     """Displays trends of music features over the release year."""
     st.title("📈 Time Series Analysis: Jeff's Music Evolution")
@@ -273,18 +265,12 @@ def show_time_series_dashboard(df):
         st.warning("No data available with a valid release year for time series analysis.")
         return
 
-    # Ensure year is treated as discrete bins
     df_ts['release_year'] = df_ts['release_year'].astype(int)
     
-    # Group by release year and calculate the mean for key quantitative and feature metrics
     metrics_cols = ['popularity', 'viewCount', 'likeCount', 'danceability', 'timbre']
-    
-    # Filter metrics_cols to only those that exist in the DataFrame
     available_metrics_cols = [col for col in metrics_cols if col in df_ts.columns]
-    
     trend_data = df_ts.groupby('release_year')[available_metrics_cols].mean().reset_index()
 
-    # Calculate missing data count for reporting
     missing_count = len(df) - len(df_ts)
     if missing_count > 0:
         st.info(f"⚠️ **Note:** {missing_count} tracks ({missing_count/len(df)*100:.2f}%) excluded due to missing release year.")
@@ -372,11 +358,13 @@ def show_time_series_dashboard(df):
 def main():
     st.title("🎶 Jeff Chang Music Evolution Dashboard")
 
-    # Load and Prepare Data (Consolidation/Type conversion happens here)
-    # *** 1. UPDATE FILE NAME ***
+    # --- 1. UPDATE FILE NAME ---
+    # Make sure this points to your LATEST file
+    # (e.g., 'final_enriched_tracks_v4.csv' if you ran the fill script)
     FILE_NAME = 'final_enriched_tracks_v3.csv' 
+    
     df = load_data(FILE_NAME)
-    df = prepare_data(df) # <-- This calls the FIXED function
+    df = prepare_data(df) # This calls the FIXED function
 
     if df.empty:
         return
@@ -404,25 +392,24 @@ def main():
         st.sidebar.warning("Release year data is not sufficient for range filtering.")
 
     # --- Tabbed Interface ---
-    # *** 2. REORDER TABS ***
     tab_dashboard, tab_timeseries, tab_album, tab_details = st.tabs([
         "📊 Main Dashboard (Filtered)", 
-        "📈 Time Series Analysis",  # NEW/Promoted Tab
+        "📈 Time Series Analysis",
         "💿 New Album: 屬於", 
-        "🎵 Song Details"
+        "🎵 Song Details" # <-- This tab is now updated
     ])
 
     with tab_dashboard:
         show_dashboard(df_filtered)
 
     with tab_timeseries: 
-        show_time_series_dashboard(df) # Use the full DF for time analysis
+        show_time_series_dashboard(df)
 
     with tab_album:
         show_new_album_dashboard(df)
 
     with tab_details:
-        show_song_details(df)
+        show_song_details(df) # <-- This calls the UPDATED function
 
 
 if __name__ == "__main__":
