@@ -17,6 +17,22 @@ st.info(
     """
 )
 
+# --- NEW: Traditional Chinese Summary ---
+st.subheader("中文重點總結")
+st.markdown(
+    """
+    這次我們使用更進階的「隨機森林」模型，來找出哪些特徵最能**預測**一首歌的受歡迎程度。
+
+    **重要發現：** 模型的整體準確度不高 (R-squared = -0.23)。這反過來證明了一個關鍵點：
+    單靠目前有的歌詞、類型和音調特徵，並**不足以**準確預測受歡迎度。
+    這強烈暗示，那些**缺失的音訊數據（如 `bpm` 速度、`danceability` 舞蹈性）**可能才是決定受歡迎度的真正關鍵因素。
+
+    儘管如此，在現有特徵中，模型認為**「歌詞字數」**是目前數據中**最重要**的預測指標（重要性 0.167），
+    其次是**「D調」**（0.057）以及關於**「無條件奉獻」**的AI主題（0.044）。
+    """
+)
+# --- End of New Section ---
+
 # --- The Most Important Caveat ---
 st.warning(
     """
@@ -42,7 +58,6 @@ st.write(
 )
 
 # Create a DataFrame for the Feature Importance
-# Data is hard-coded from our analysis
 feature_data = {
     'Feature': [
         'Lyric Word Count',
@@ -64,7 +79,7 @@ feature_data = {
         'AI Sentiment: Melancholy & Helplessness (憂鬱、沉重、無奈...)',
         'AI Sentiment: Relief & Gratitude (釋然、感恩與對幸福的珍視...)',
         'AI Sentiment: Passionate, Protective Melancholy (堅定、熱切...)',
-        'AI Theme: Hidden Pain & Self-Sacrifice (隱藏的痛苦與自我犧牲...)'
+        'AI Theme: Hidden Pain & Self-Sacrifice (隱藏的痛苦與自我犧D牲...)'
     ],
     'Importance Score': [
         0.1667,  # lyric_word_count
