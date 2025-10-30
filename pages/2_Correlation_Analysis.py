@@ -20,6 +20,20 @@ st.info(
     """
 )
 
+# --- NEW: Traditional Chinese Summary ---
+st.subheader("中文重點總結")
+st.markdown(
+    """
+    這次的「線性相關」分析發現，**歌詞情感**是與歌曲受歡迎程度連結最強的因素。
+    特別是像「懇切的深情與隱藏的焦慮」($r=0.46$) 這類複雜的情感，顯示出最強的正相關。
+
+    在音訊特徵方面，**「古典」類型** ($r=0.24$) 和**「E調」** ($r=0.22$) 的歌曲也與高受歡迎度有中等程度的關聯。
+
+    **重要限制：** 值得注意的是，由於數據缺失，我們無法分析 `bpm`（速度）、`danceability`（舞蹈性）和各種 `mood`（情緒）分數與受歡迎程度的關聯。
+    """
+)
+# --- End of New Section ---
+
 st.markdown("---")
 
 # --- Finding 1: Lyric Sentiment ---
@@ -33,7 +47,6 @@ st.write(
 )
 
 # Create a DataFrame for the sentiment correlations
-# We'll show the Top 5 Positive and Top 5 Negative
 sentiment_data = {
     'Sentiment': [
         'Sincere affection w/ hidden anxiety (懇切的深情與隱藏的焦慮和脆弱)',
@@ -62,11 +75,6 @@ sentiment_data = {
         -0.10  # 反思與平靜
     ]
 }
-
-# --- THIS IS THE FIX ---
-# The error was caused by a missing comma in the list above.
-# This code block is now correct.
-
 sentiment_df = pd.DataFrame(sentiment_data).set_index('Sentiment')
 
 # Display the bar chart
