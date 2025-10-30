@@ -41,7 +41,7 @@ sentiment_data = {
         'Nostalgic, gentle, helplessness (懷舊、溫柔、對時光飛逝的無奈與感傷)',
         'Melancholy w/ firm relief (憂鬱中帶有堅定的釋懷與自我安慰)',
         'Anxious, contradictory, hopeful (忐忑不安、矛盾、帶有希望的猶豫)',
-        '...'
+        '...',
         'Passionate worship, dramatic tension (激昂的崇拜、迷戀與戲劇性的張力)',
         'Firm, rebellious, resolute (堅定、反抗、追求自主的決心)',
         'Active, optimistic, uplifting (積極、樂觀、振奮)',
@@ -62,6 +62,11 @@ sentiment_data = {
         -0.10  # 反思與平靜
     ]
 }
+
+# --- THIS IS THE FIX ---
+# The error was caused by a missing comma in the list above.
+# This code block is now correct.
+
 sentiment_df = pd.DataFrame(sentiment_data).set_index('Sentiment')
 
 # Display the bar chart
